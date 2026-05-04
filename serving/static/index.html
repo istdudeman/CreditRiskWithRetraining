@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Risk Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="logo-icon">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" fill="#fff" />
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <div class="logo-text">logoipsum<span style="font-size:0.5rem;vertical-align:super;">✦</span></div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item" data-tab="view-dashboard">
+                    <span class="icon">⊞</span> Dashboard
+                </a>
+                <a href="#" class="nav-item active" data-tab="view-form">
+                    <span class="icon">📝</span> Form
+                </a>
+                <a href="#" class="nav-item" data-tab="view-list">
+                    <span class="icon">📋</span> List
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">👤</span> Profile
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">✓</span> Result
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">⚠</span> Exception
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">⚙</span> Account
+                </a>
+            </nav>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <div class="workspace">
+
+            <!-- HEADER -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="icon-action">≡</button>
+                </div>
+                <div class="header-right">
+                    <button class="icon-action">🔍</button>
+                    <button class="icon-action">❔</button>
+                    <button class="icon-action badge-wrap">
+                        🔔
+                        <span class="badge">8</span>
+                    </button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=John&background=10b981&color=fff&rounded=true&size=32"
+                            alt="Avatar" class="avatar-img">
+                        <span class="username">John</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <main class="content-body">
+
+                <!-- SUMMARY CARDS -->
+                <div class="summary-row">
+                    <!-- Card 1 -->
+                    <div class="summary-card">
+                        <div class="sc-top">
+                            <span class="sc-title">Total Predictions</span>
+                            <span class="sc-info">ⓘ</span>
+                        </div>
+                        <div class="sc-value" id="statTotal">154430</div>
+                        <div class="sc-middle">
+                            <div class="sc-trend">Week ratio <span id="trendWeek">13%</span> <span class="up">▲</span>
+                            </div>
+                            <div class="sc-trend">Day ratio <span id="trendDay">10%</span> <span class="down">▼</span>
+                            </div>
+                        </div>
+                        <div class="sc-bottom">
+                            Daily Predictions 15,443
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="summary-card">
+                        <div class="sc-top">
+                            <span class="sc-title">High Risk Alerts</span>
+                            <span class="sc-info">ⓘ</span>
+                        </div>
+                        <div class="sc-value" id="statAlerts">6480</div>
+                        <div class="sc-middle visual">
+                            <svg viewBox="0 0 200 40" class="spark-svg">
+                                <path
+                                    d="M0,40 L10,30 L30,35 L50,15 L70,25 L90,20 L110,25 L130,5 L150,20 L180,5 L200,30 L200,40 Z"
+                                    fill="#00d0ff" opacity="0.8" />
+                                <path
+                                    d="M0,40 L15,35 L35,20 L55,25 L75,10 L95,20 L115,25 L135,15 L155,20 L185,15 L200,35 L200,40 Z"
+                                    fill="#cf70ff" opacity="0.6" />
+                            </svg>
+                        </div>
+                        <div class="sc-bottom">
+                            Daily alerts 4,280
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="summary-card">
+                        <div class="sc-top">
+                            <span class="sc-title">Low Risk Approvals</span>
+                            <span class="sc-info">ⓘ</span>
+                        </div>
+                        <div class="sc-value" id="statApprovals">5320</div>
+                        <div class="sc-middle visual flex-bottom">
+                            <!-- fake bars -->
+                            <div class="mini-bar" style="height:30%"></div>
+                            <div class="mini-bar" style="height:80%"></div>
+                            <div class="mini-bar" style="height:60%"></div>
+                            <div class="mini-bar" style="height:35%"></div>
+                            <div class="mini-bar" style="height:65%"></div>
+                        </div>
+                        <div class="sc-bottom">
+                            Approval rate 82%
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="summary-card center-card">
+                        <div class="sc-title" style="margin-top:1rem;">Model Accuracy (AUC)</div>
+                        <div class="sc-large-value" id="statAUC">88</div>
+                    </div>
+                </div>
+
+                <!-- MAIN VIEWS -->
+                <div id="view-dashboard" class="main-panel view-section hidden"
+                    style="padding: 40px; text-align: center;">
+                    <h2>Dashboard Overview</h2>
+                    <p style="color: #666; margin-top: 10px;">Select "Form" from the sidebar to make a prediction.</p>
+                </div>
+
+                <div id="view-form" class="main-panel view-section">
+                    <!-- Panel Tabs -->
+                    <div class="panel-header">
+                        <div class="panel-tabs">
+                            <button class="panel-tab active">Prediction Form</button>
+                            <button class="panel-tab">Visits</button>
+                        </div>
+                        <div class="panel-filters">
+                            <div class="date-ranges">
+                                <span>All day</span>
+                                <span>All week</span>
+                                <span>All month</span>
+                                <span class="active-range">All year</span>
+                            </div>
+                            <div class="date-picker">
+                                2020-01-01 &nbsp;~&nbsp; 2020-12-31 📅
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Content -->
+                    <div class="panel-body split-view">
+                        <!-- Left: Form -->
+                        <div class="left-col">
+                            <div class="col-title">Input Details</div>
+                            <form id="predictionForm" class="prediction-form">
+                                <div class="form-grid">
+                                    <div class="fg">
+                                        <label>Bureau Score</label>
+                                        <input type="number" name="bureau_score" placeholder="e.g. 720" required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Age</label>
+                                        <input type="number" name="age" placeholder="e.g. 35" required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Past Due Months</label>
+                                        <input type="number" name="past_due_months" placeholder="0" required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Marital Status</label>
+                                        <select name="marital_status" required>
+                                            <option value="Menikah">Menikah</option>
+                                            <option value="Belum menikah">Belum menikah</option>
+                                            <option value="Cerai">Cerai</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Employment Type</label>
+                                        <select name="employment_type" required>
+                                            <option value="Pensiunan">Pensiunan</option>
+                                            <option value="ASN aktif">ASN aktif</option>
+                                            <option value="ASN kontrak">ASN kontrak</option>
+                                            <option value="PNS Purna Bakti">PNS Purna Bakti</option>
+                                            <option value="Pegawai BUMN">Pegawai BUMN</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Salary Source</label>
+                                        <select name="salary_source" required>
+                                            <option value="Taspen">Taspen</option>
+                                            <option value="Pemerintah Daerah">Pemerintah Daerah</option>
+                                            <option value="Kementerian">Kementerian</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Stability</label>
+                                        <select name="stability" required>
+                                            <option value="Stable">Stable</option>
+                                            <option value="Unstable">Unstable</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <!-- Credit History removed as it was manually mapped in JS, but let's change input straight to credit_history_length -->
+                                        <label>Credit History (Years)</label>
+                                        <input type="number" name="credit_history_length" placeholder="e.g. 10" required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Collateral Flag</label>
+                                        <select name="collateral_flag" required>
+                                            <option value="1">Yes</option>
+                                            <option value="0">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Life Ins. Coverage</label>
+                                        <input type="number" name="life_insurance_coverage" placeholder="50000000"
+                                            required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Ins. Premium Monthly</label>
+                                        <input type="number" name="insurance_premium_monthly" placeholder="150000"
+                                            required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Insurance Status</label>
+                                        <select name="insurance_status" required>
+                                            <option value="Ada">Ada</option>
+                                            <option value="Lapsed">Lapsed</option>
+                                            <option value="Tidak ada">Tidak ada</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Health Risk Score</label>
+                                        <input type="number" step="0.01" name="health_risk_score" placeholder="0.8"
+                                            required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Medical Expense Ratio</label>
+                                        <input type="number" step="0.01" name="medical_expense_ratio" placeholder="0.1"
+                                            required>
+                                    </div>
+                                </div>
+                                <div class="form-action">
+                                    <button type="submit" id="submitBtn">Analyze Risk</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right: Result & Ranking -->
+                        <div class="right-col">
+                            <div class="col-title">Evaluation Output</div>
+
+                            <!-- Hidden until prediction is made -->
+                            <div id="resultOutput" style="display:none;">
+                                <div class="prob-showcase">
+                                    <div class="prob-circle">
+                                        <strong id="probabilityValue">0%</strong>
+                                        <span>Probability</span>
+                                    </div>
+                                    <div id="riskClass" class="risk-badge">Evaluating...</div>
+                                </div>
+
+                                <div class="ranking-list" id="shapList">
+                                    <!-- Items will be injected here. Style similarly to the "Sales ranking" -->
+                                </div>
+                            </div>
+
+                            <div id="placeholderOutput" class="placeholder-msg">
+                                Fill out the form and submit to see the evaluation.
+                            </div>
+
+                            <p id="errorText" class="error-text hidden"></p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

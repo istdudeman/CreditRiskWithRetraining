@@ -1,0 +1,67 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Data files (large or sensitive)
+*.csv
+*.tsv
+*.dat
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.parquet
+*.jsonl
+
+# ML Model artifacts and runs
+mlruns/
+mlartifacts/
+*.pkl
+*.joblib
+*.h5
+*.onnx
+*.xgb
+*.pt
+*.pth
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
+
+# IDE and OS specific
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+# Unless you want to ignore docker-compose.yml (usually tracked)
+
+# n8n specific data (to avoid committing local databases, logs, and sensitive data)
+n8n_data/binaryData/
+n8n_data/nodes/
+n8n_data/git/
+n8n_data/ssh/
+n8n_data/config
+n8n_data/*.sqlite*
+n8n_data/*.log
+
+# Plots and images generated during runtime (optional, uncomment if you want to ignore all pngs)
+# *.png
+# *.jpg

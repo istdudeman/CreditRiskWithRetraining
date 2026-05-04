@@ -1,0 +1,53 @@
+import pandas as pd
+import numpy as np
+from sdv.metadata import Metadata
+from sdv.single_table import CTGANSynthesizer
+from sdv.evaluation.single_table import evaluate_quality
+from xgboost import XGBClassifier
+from sklearn.metrics import roc_auc_score, f1_score
+from sklearn.model_selection import train_test_split
+
+data_riil = pd.read_csv('data_riil.csv')
+metadata = Metadata.detect_from_dataframe(data=data_riil, table_name='credit_risk_data')
+ 
+synthesizer = CTGANSynthesizer(
+    metadata,
+    enforce_rounding=True,
+    epochs=500
+)
+
+from sdv.constraints import Inequality
+age_constraint = Inequality(
+    low_column_name='years_employed',
+    high_column_name='age',
+    difference_value=18
+)
+synthesizer.add_constraints(constraints=[age_constraint])
+
+synthesizer.fit(data_riil)
+data_sintetis = synthesizer.sample(num_rows=5000)
+
+# A. Fidelity (Kesetiaan Statistik)
+quality_report = evaluate_quality(data_riil, data_sintetis, metadata)
+print(f"Skor Kualitas Fidelity: {quality_report.get_score()}")
+
+# B. Utility (Train Synthetic Test Real - TSTR)
+X_syn = data_sintetis.drop('default_12m', axis=1)
+y_syn = data_sintetis['default_12m']
+X_real_train, X_real_test, y_real_train, y_real_test = train_test_split(
+    data_riil.drop('default_12m', axis=1), data_riil['default_12m'], test_size=0.3
+)
+
+# Melatih model XGBoost pada data sintetis
+model_tstr = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+model_tstr.fit(X_syn, y_syn)
+
+# Menguji pada data riil yang belum pernah dilihat model
+y_pred_proba = model_tstr.predict_proba(X_real_test)[:, 1]
+auc_score = roc_auc_score(y_real_test, y_pred_proba)
+
+print(f"Hasil Evaluasi TSTR (AUC): {auc_score}")
+if auc_score >= 0.75:
+    print("Validasi Berhasil: Data sintetis memiliki utilitas tinggi.")
+else:
+    print("Validasi Gagal: Performa model di bawah ambang batas operasional.")

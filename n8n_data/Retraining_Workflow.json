@@ -1,0 +1,153 @@
+{
+  "name": "Model Retraining Pipeline Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ]
+            }
+          ]
+        }
+      },
+      "id": "e21b2b80-8777-4b13-9a3b-2f3ee4af56ef",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "C:\\Users\\daber\\OneDrive\\Documents\\ITSNEEDS\\FinalProject\\ModelTraining\\run_check_triggers.bat"
+      },
+      "id": "6d3c0ef2-8069-4f7f-8566-da649fa0b797",
+      "name": "Check Triggers",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = JSON.parse(items[0].json.stdout);\nreturn [{ json: output }];"
+      },
+      "id": "7ec92f39-f9c3-42e8-b8cf-8988a86a63d9",
+      "name": "Parse Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.should_retrain }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "966c9ff9-0a37-43ca-a38c-f0ad727bc2f6",
+      "name": "If Should Retrain",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "C:\\Users\\daber\\OneDrive\\Documents\\ITSNEEDS\\FinalProject\\ModelTraining\\run_training.bat"
+      },
+      "id": "a90b4bf1-8ba3-4c95-8121-657c7423e2fb",
+      "name": "Run Training Logic",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "content": "No retraining required. Parameters stable."
+      },
+      "id": "c6225ff5-cb1e-45fa-aeb6-a1188358e578",
+      "name": "No Action",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Triggers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Triggers": {
+      "main": [
+        [
+          {
+            "node": "Parse Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Output": {
+      "main": [
+        [
+          {
+            "node": "If Should Retrain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Retrain": {
+      "main": [
+        [
+          {
+            "node": "Run Training Logic",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

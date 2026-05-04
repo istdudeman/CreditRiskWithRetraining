@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  n8n:
+    build: .
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_ENABLE_EXECUTE_COMMAND=true
+      - NODES_EXCLUDE=[]
+      - N8N_SECURE_COOKIE=false
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - GENERIC_TIMEZONE=Asia/Jakarta
+      - TZ=Asia/Jakarta
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+      - ./:/FinalProject
+      - ./mlruns:/mlruns
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+      - ./mlartifacts:/mlartifacts
+    environment:
+      - MLFLOW_SERVER_ALLOWED_HOSTS=*
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:///mlruns --serve-artifacts --artifacts-destination /mlartifacts
+    restart: unless-stopped
+
+  fastapi-serving:
+    build:
+      context: .
+      dockerfile: serving/Dockerfile
+    container_name: fastapi-serving
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./:/app
+      - ./mlruns:/mlruns
+    depends_on:
+      - mlflow
+    restart: unless-stopped
