@@ -24,7 +24,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 from preprocessing.feature_selection import WoETransformer
 from preprocessing.imbalance_handler import SmoteResampler
 
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"file:/{os.path.join(os.path.dirname(SCRIPT_DIR), 'mlruns').replace('//', '/')}")
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 experiment_name = f"Credit_Risk_MLOPS_{int(time.time())}"
 mlflow.set_experiment(experiment_name)
@@ -150,13 +150,26 @@ try:
         model_registered = False
         
         if auc_score > 0.70: 
-            mlflow.xgboost.log_model(
+            model_info = mlflow.xgboost.log_model(
                 xgb_model=best_model, 
                 artifact_path="model", 
                 registered_model_name=MODEL_NAME
             )
             print(f"Model berhasil didaftarkan ke MLflow Model Registry dengan nama: {MODEL_NAME}", file=sys.stderr)
             model_registered = True
+            
+            try:
+                # Transition to Production automatically so the API always picks up the latest successfully trained model
+                client = mlflow.tracking.MlflowClient()
+                client.transition_model_version_stage(
+                    name=MODEL_NAME,
+                    version=model_info.registered_model_version,
+                    stage="Production",
+                    archive_existing_versions=True
+                )
+                print(f"Model Version {model_info.registered_model_version} transitioned to Production.", file=sys.stderr)
+            except Exception as transition_err:
+                print(f"Warning: Failed to transition model to Production: {transition_err}", file=sys.stderr)
         else:
             print("Model tidak didaftarkan karena performa di bawah threshold (0.70).", file=sys.stderr)
 

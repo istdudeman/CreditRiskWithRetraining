@@ -28,57 +28,72 @@ woe_transformer = None
 shap_explainer = None
 
 @app.on_event("startup")
-def load_model_artifacts():
+def startup_event():
+    load_model_artifacts(max_retries=5, retry_delay=5)
+
+def load_model_artifacts(max_retries=1, retry_delay=0):
     global xgb_model, woe_transformer, shap_explainer
     client = mlflow.tracking.MlflowClient()
     
-    try:
-        print(f"Connecting to MLflow: {MLFLOW_TRACKING_URI}")
-        # First try to fetch models explicitly promoted to Production
-        latest_versions = client.get_latest_versions(name=MODEL_NAME, stages=["Production"])
-        if not latest_versions:
-            latest_versions = client.get_latest_versions(name=MODEL_NAME)
+    import time
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"Connecting to MLflow: {MLFLOW_TRACKING_URI} (Attempt {attempt+1}/{max_retries})")
+            # First try to fetch models explicitly promoted to Production
+            latest_versions = client.get_latest_versions(name=MODEL_NAME, stages=["Production"])
+            if not latest_versions:
+                latest_versions = client.get_latest_versions(name=MODEL_NAME)
+                
+            if not latest_versions:
+                print(f"Warning: No registered model found with name '{MODEL_NAME}'.")
+                return
+                
+            # Filter out any non-existent version that might have been partially logged or deleted
+            # and sort to get the absolute latest if multiple exist within the filtered list
+            latest_version = sorted(latest_versions, key=lambda x: int(x.version), reverse=True)[0]
+            run_id = latest_version.run_id
             
-        if not latest_versions:
-            print(f"Warning: No registered model found with name '{MODEL_NAME}'. API degraded.")
-            return
-
-        # Sort to get the absolute latest if multiple exist within the filtered list
-        latest_version = sorted(latest_versions, key=lambda x: int(x.version), reverse=True)[0]
-        run_id = latest_version.run_id
-        
-        print(f"Loading version {latest_version.version} from Run ID: {run_id}")
-        
-        # 1. Load the XGBoost Model
-        model_uri = f"models:/{MODEL_NAME}/{latest_version.version}"
-        xgb_model = mlflow.xgboost.load_model(model_uri)
-        
-        # 2. Download the WoE transformer pickle
-        artifact_path = client.download_artifacts(run_id, "preprocessing/woe_transformer.pkl")
-        woe_transformer = joblib.load(artifact_path)
-        
-        # 3. Initialize SHAP explainer
-        # Workaround for SHAP + XGBoost 2.0 list-like base_score parsing issue
-        import builtins
-        import shap.explainers._tree
-        original_float = builtins.float
-        def safe_float(val):
-            try:
-                return original_float(val)
-            except ValueError:
-                if isinstance(val, str) and val.startswith('[') and val.endswith(']'):
-                    return original_float(val[1:-1])
-                raise
-        
-        shap.explainers._tree.float = safe_float
-        shap_explainer = shap.TreeExplainer(xgb_model)
-        shap.explainers._tree.float = original_float
-        
-        print("Model, WoE Transformer, and SHAP Explainer successfully loaded into memory.")
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"Error loading model during startup: {e}")
+            print(f"Loading version {latest_version.version} from Run ID: {run_id}")
+            
+            # 1. Load the XGBoost Model
+            model_uri = f"models:/{MODEL_NAME}/{latest_version.version}"
+            xgb_model = mlflow.xgboost.load_model(model_uri)
+            
+            # 2. Download the WoE transformer pickle
+            artifact_path = client.download_artifacts(run_id, "preprocessing/woe_transformer.pkl")
+            woe_transformer = joblib.load(artifact_path)
+            
+            # 3. Initialize SHAP explainer
+            # Workaround for SHAP + XGBoost 2.0 list-like base_score parsing issue
+            import builtins
+            import shap.explainers._tree
+            original_float = builtins.float
+            def safe_float(val):
+                try:
+                    return original_float(val)
+                except ValueError:
+                    if isinstance(val, str) and val.startswith('[') and val.endswith(']'):
+                        return original_float(val[1:-1])
+                    raise
+            
+            shap.explainers._tree.float = safe_float
+            shap_explainer = shap.TreeExplainer(xgb_model)
+            shap.explainers._tree.float = original_float
+            
+            print("Model, WoE Transformer, and SHAP Explainer successfully loaded into memory.")
+            break # Successfully loaded, exit the retry loop
+            
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            if attempt < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                import traceback
+                traceback.print_exc()
+                if max_retries > 1:
+                    print("Max retries reached. API will run in degraded mode.")
 
 class PredictRequest(BaseModel):
     # Dynamic list of dictionary objects to accommodate arbitrary input formats 
@@ -92,6 +107,11 @@ def health_status():
 
 @app.post("/predict")
 def predict(request: PredictRequest):
+    global xgb_model, woe_transformer, shap_explainer
+    if not xgb_model or not woe_transformer:
+        print("Model not loaded. Attempting to lazy load model...")
+        load_model_artifacts(max_retries=1, retry_delay=0)
+        
     if not xgb_model or not woe_transformer:
         raise HTTPException(status_code=503, detail="Model unavailable.")
     
@@ -119,6 +139,26 @@ def predict(request: PredictRequest):
         for f in required_features:
             if f not in df_input.columns:
                 df_input[f] = DEFAULT_FEATURES.get(f, 0)
+                
+        # Check for anomalies
+        anomalies = []
+        for i, row in df_input.iterrows():
+            reasons = []
+            if row.get('age', 0) < 18 or row.get('age', 0) > 100:
+                reasons.append("Invalid age")
+            if row.get('monthly_income', 0) < 0:
+                reasons.append("Negative monthly income")
+            if row.get('loan_amount', 0) <= 0:
+                reasons.append("Invalid loan amount")
+            if 'ltv' in row and (row['ltv'] < 0 or row['ltv'] > 2.0):
+                reasons.append("LTV out of bounds")
+            
+            # Check if age at the end of the loan exceeds 80 years old
+            age_at_maturity = row.get('age', 0) + (row.get('term_months', 0) / 12)
+            if age_at_maturity > 80:
+                reasons.append(f"Usia saat pelunasan melebihi batas (80 tahun)")
+                
+            anomalies.append(reasons)
         
         # Apply transformation
         df_woe = woe_transformer.transform(df_input, keep_target=False)
@@ -133,6 +173,15 @@ def predict(request: PredictRequest):
         # Format response
         results = []
         for i, p in enumerate(probs):
+            if anomalies[i]:
+                results.append({
+                    "grade": "Undefined",
+                    "anomaly_reasons": anomalies[i],
+                    "probability": float(p),
+                    "shap_values": []
+                })
+                continue
+                
             # Create a dictionary of features and their SHAP contributions
             feature_contributions = []
             for j, col in enumerate(df_woe.columns):
@@ -146,9 +195,18 @@ def predict(request: PredictRequest):
             # Sort by absolute SHAP value (most impactful first)
             feature_contributions.sort(key=lambda x: abs(x["value"]), reverse=True)
             
+            if p < 0.25:
+                grade = "A"
+            elif p < 0.50:
+                grade = "B"
+            elif p < 0.75:
+                grade = "C"
+            else:
+                grade = "D"
+            
             results.append({
+                "grade": grade,
                 "probability": float(p),
-                "risk_class": "High Risk" if p > 0.50 else "Low Risk",
                 "shap_values": feature_contributions
             })
             

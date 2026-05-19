@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Map UI specifics to Model needs
         if (record['stability']) {
-            record['income_stability'] = record['stability'] === 'Stable' ? 1.0 : 0.0;
+            record['income_stability'] = record['stability'] === 'Pemasukan stabil per bulan' ? 1.0 : 0.0;
             delete record['stability'];
         }
 
@@ -154,16 +154,29 @@ document.addEventListener('DOMContentLoaded', () => {
         errorTextEl.classList.add('hidden');
         
         // Basics
+        if (prediction.grade === 'Undefined') {
+            probabilityValueEl.textContent = '-';
+            riskClassEl.textContent = 'Anomaly Detected';
+            riskClassEl.className = 'risk-badge high'; 
+            
+            // Show anomaly reasons in shapList
+            shapListContainer.innerHTML = `<div style="color: #ff4d4f; padding: 10px;">
+                <strong>Anomalies:</strong><br>
+                ${prediction.anomaly_reasons.join('<br>')}
+            </div>`;
+            return;
+        }
+
         const probPercentage = (prediction.probability * 100).toFixed(1);
         probabilityValueEl.textContent = `${probPercentage}%`;
         
-        riskClassEl.textContent = prediction.risk_class;
+        riskClassEl.textContent = `Grade ${prediction.grade}`;
         riskClassEl.className = 'risk-badge'; // reset
         
-        if (prediction.probability > 0.5) {
-            riskClassEl.classList.add('high');
-        } else {
+        if (prediction.grade === 'A' || prediction.grade === 'B') {
             riskClassEl.classList.add('low');
+        } else {
+            riskClassEl.classList.add('high');
         }
 
         // Render Ranking list from SHAP

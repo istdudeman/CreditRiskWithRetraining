@@ -216,16 +216,17 @@
                                         </select>
                                     </div>
                                     <div class="fg">
-                                        <label>Stability</label>
+                                        <label>Pemasukan uang per bulan</label>
                                         <select name="stability" required>
-                                            <option value="Stable">Stable</option>
-                                            <option value="Unstable">Unstable</option>
+                                            <option value="Pemasukan stabil per bulan">Pemasukan stabil per bulan</option>
+                                            <option value="Pemasukan tidak stabil per bulan">Pemasukan tidak stabil per bulan</option>
                                         </select>
                                     </div>
                                     <div class="fg">
                                         <!-- Credit History removed as it was manually mapped in JS, but let's change input straight to credit_history_length -->
                                         <label>Credit History (Years)</label>
-                                        <input type="number" name="credit_history_length" placeholder="e.g. 10" required>
+                                        <input type="number" name="credit_history_length" placeholder="e.g. 10"
+                                            required>
                                     </div>
                                     <div class="fg">
                                         <label>Collateral Flag</label>
@@ -261,6 +262,14 @@
                                         <label>Medical Expense Ratio</label>
                                         <input type="number" step="0.01" name="medical_expense_ratio" placeholder="0.1"
                                             required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Loan Amount (Rp)</label>
+                                        <input type="number" name="loan_amount" placeholder="e.g. 10000000" required>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Loan Term (Months)</label>
+                                        <input type="number" name="term_months" placeholder="e.g. 12" required>
                                     </div>
                                 </div>
                                 <div class="form-action">
